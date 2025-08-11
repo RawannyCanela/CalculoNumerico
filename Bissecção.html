@@ -1,0 +1,242 @@
+<!doctype html>
+<html lang="pt-br">
+
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <style>
+    body {
+      font-family: system-ui, Segoe UI, Roboto, Arial, sans-serif;
+      max-width: 920px;
+      margin: 32px auto;
+      padding: 0 16px;
+      color: #111
+    }
+
+    h1 {
+      margin: 0 0 12px
+    }
+
+    form {
+      display: grid;
+      grid-template-columns: repeat(6, 1fr);
+      gap: 12px;
+      align-items: end;
+      margin-bottom: 20px
+    }
+
+    label {
+      display: flex;
+      flex-direction: column;
+      font-size: 13px;
+      gap: 6px
+    }
+
+    input,
+    select,
+    button {
+      padding: 10px;
+      border: 1px solid #ddd;
+      border-radius: 10px;
+      font-size: 14px
+    }
+
+    button {
+      grid-column: 1/-1;
+      cursor: pointer
+    }
+
+    pre {
+      background: #f7f7f8;
+      border: 1px solid #eee;
+      padding: 12px;
+      border-radius: 10px;
+      overflow: auto;
+      white-space: pre-wrap
+    }
+
+    .card {
+      border: 1px solid #eee;
+      border-radius: 14px;
+      padding: 16px;
+      margin-top: 18px
+    }
+
+    .grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 12px
+    }
+
+    @media (max-width:800px) {
+      .grid {
+        grid-template-columns: 1fr
+      }
+    }
+
+    .muted {
+      color: #666;
+      font-size: 12px
+    }
+
+    .row-6 {
+      grid-column: 1/-1
+    }
+  </style>
+</head>
+
+<body>
+  <h1>Método da Bisseção</h1>
+  <form id="form">
+    <label class="row-6">f(x)
+      <input id="expr" value="x^3 - x*9 + 3" required>
+    </label>
+    <label style="grid-column:span 2">ε (tolerância)
+      <select id="epsPreset">
+        <option value="1e-1">E= -1</option>
+        <option value="1e-2">E= -2</option>
+        <option value="1e-3">E= -3</option>
+        <option value="1e-4">E= -4</option>
+        <option value="1e-5">E= -5</option>
+        <option value="1e-6" selected>E= -6</option>
+        <option value="1e-7">E= -7</option>
+        <option value="1e-8">E= -8</option>
+        <option value="1e-9">E= -9</option>
+        <option value="1e-10">E= -10</option>
+      </select>
+    </label>
+    <button type="submit">Calcular</button>
+  </form>
+  <div class="grid">
+    <div class="card">
+      <h3>Intervalos detectados</h3>
+      <pre id="intervals">—</pre>
+    </div>
+    <div class="card">
+      <h3>Resultados da bisseção</h3>
+      <pre id="results">—</pre>
+    </div>
+  </div>
+  <script>
+    const MIN = -1000, MAX = 1000, STEP = 1, MAX_ITER = 200;
+
+    function normalizeExpr(expr) {
+      let s = expr.replace(/\^/g, '^');
+      s = s.replace(/,/g, '.');
+      s = s.replace(/(\d)\s*x/gi, '$1*x');
+      s = s.replace(/x\s*\(/gi, 'x*(');
+      s = s.replace(/\)\s*x/gi, ')*x');
+      return s;
+    }
+
+    function evalExpr(expr, xVal) {
+      expr = normalizeExpr(expr);
+
+      const tokens = expr.match(/\d*\.?\d+|x|[+\-*/^()]|\S/g);
+      const output = [], ops = [];
+      const prec = { '+': 1, '-': 1, '*': 2, '/': 2, '^': 3 };
+      const assoc = { '+': 'L', '-': 'L', '*': 'L', '/': 'L', '^': 'R' };
+
+      tokens.forEach(t => {
+        if (/^[0-9.]+$/.test(t)) {
+          output.push(parseFloat(t));
+        } else if (t === 'x') {
+          output.push(xVal);
+        } else if (t in prec) {
+          while (ops.length) {
+            const o2 = ops[ops.length - 1];
+            if (o2 in prec && ((assoc[t] === 'L' && prec[t] <= prec[o2]) || (assoc[t] === 'R' && prec[t] < prec[o2]))) {
+              output.push(ops.pop());
+            } else break;
+          }
+          ops.push(t);
+        } else if (t === '(') {
+          ops.push(t);
+        } else if (t === ')') {
+          while (ops.length && ops[ops.length - 1] !== '(') output.push(ops.pop());
+          ops.pop();
+        }
+      });
+      while (ops.length) output.push(ops.pop());
+
+      const stack = [];
+      output.forEach(tok => {
+        if (typeof tok === 'number') {
+          stack.push(tok);
+        } else {
+          const b = stack.pop(), a = stack.pop();
+          switch (tok) {
+            case '+': stack.push(a + b); break;
+            case '-': stack.push(a - b); break;
+            case '*': stack.push(a * b); break;
+            case '/': stack.push(a / b); break;
+            case '^': stack.push(a ** b); break; 
+          }
+        }
+      });
+      return stack[0];
+    }
+
+    function detectarIntervalos(expr, min, max, step) {
+      const ints = []; let xp = min, fp = evalExpr(expr, xp);
+      for (let x = min + step; x <= max; x += step) {
+        const fc = evalExpr(expr, x);
+        if (fp === 0) ints.push([xp, xp]);
+        else if (fp * fc < 0) ints.push([xp, x]);
+        xp = x; fp = fc;
+      }
+      return ints;
+    }
+
+    function bissecao(expr, a, b, tol, maxIter) {
+      let fa = evalExpr(expr, a), fb = evalExpr(expr, b);
+      if (fa === 0) return { raiz: a, fRaiz: 0, intervaloFinal: [a, a], iteracoes: 0 };
+      if (fb === 0) return { raiz: b, fRaiz: 0, intervaloFinal: [b, b], iteracoes: 0 };
+      if (fa * fb > 0) throw new Error(`Intervalo inválido: f(${a}) e f(${b}) com mesmo sinal.`);
+
+      let l = a, r = b, m, fm, iter = 0;
+      while ((r - l) / 2 > tol && iter < maxIter) {
+        m = (l + r) / 2; fm = evalExpr(expr, m);
+        if (fm === 0) break;
+        if (fa * fm < 0) { r = m; fb = fm; } else { l = m; fa = fm; }
+        iter++;
+      }
+      m = (l + r) / 2; fm = evalExpr(expr, m);
+      return { raiz: m, fRaiz: fm, intervaloFinal: [l, r], iteracoes: iter };
+    }
+
+    document.getElementById('form').addEventListener('submit', e => {
+      e.preventDefault();
+      const expr = document.getElementById('expr').value.trim();
+      const tol = parseFloat(document.getElementById('epsPreset').value);
+
+      const ints = detectarIntervalos(expr, MIN, MAX, STEP);
+      if (!ints.length) {
+        document.getElementById('intervals').textContent = 'Nenhuma troca de sinal encontrada.';
+        document.getElementById('results').textContent = '—';
+        return;
+      }
+
+      document.getElementById('intervals').textContent =
+        ints.map(([a, b], i) => `${i + 1}) [${a}, ${b}]`).join('\n');
+
+      const lines = [];
+      ints.forEach(([a, b], i) => {
+        try {
+          const r = bissecao(expr, a, b, tol, MAX_ITER);
+          lines.push(`#${i + 1} [${a}, ${b}]
+  ε = ${tol}
+  Raiz ≈ ${r.raiz}
+  f(raiz) = ${r.fRaiz}
+  Intervalo final = [${r.intervaloFinal[0]}, ${r.intervaloFinal[1]}]
+  Iterações = ${r.iteracoes}`);
+        } catch (err) {
+          lines.push(`#${i + 1} [${a}, ${b}] — erro: ${err.message}`);
+        }
+      });
+      document.getElementById('results').textContent = lines.join('\n\n');
+    });
+  </script>
+</body>
+
+</html>
