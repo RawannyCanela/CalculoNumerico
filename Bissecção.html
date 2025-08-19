@@ -68,7 +68,16 @@
       gap: 12px
     }
 
+    @media (max-width:800px) {
+      .grid {
+        grid-template-columns: 1fr
+      }
+    }
 
+    .muted {
+      color: #666;
+      font-size: 12px
+    }
 
     .row-6 {
       grid-column: 1/-1
@@ -161,7 +170,7 @@
             case '-': stack.push(a - b); break;
             case '*': stack.push(a * b); break;
             case '/': stack.push(a / b); break;
-            case '^': stack.push(a ** b); break; 
+            case '^': stack.push(a ** b); break;
           }
         }
       });

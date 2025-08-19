@@ -1,0 +1,152 @@
+<!doctype html>
+<html lang="pt-br">
+
+<head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width,initial-scale=1" />
+    <title>Sistemas Lineares</title>
+    <style>
+        body {
+            font-family: system-ui, Segoe UI, Roboto, Arial, sans-serif;
+            max-width: 920px;
+            margin: 32px auto;
+            padding: 0 16px;
+            color: #111
+        }
+
+        h1 {
+            margin: 0 0 12px
+        }
+
+        form {
+            display: grid;
+            grid-template-columns: repeat(6, 1fr);
+            gap: 12px;
+            align-items: end;
+            margin-bottom: 20px
+        }
+
+        label {
+            display: flex;
+            flex-direction: column;
+            font-size: 13px;
+            gap: 6px
+        }
+
+        input,
+        button {
+            padding: 10px;
+            border: 1px solid #ddd;
+            border-radius: 10px;
+            font-size: 14px
+        }
+
+        button {
+            grid-column: 1/-1;
+            cursor: pointer;
+            background: #eee;
+            border-color: #eee
+        }
+
+        pre {
+            background: #f7f7f8;
+            border: 1px solid #eee;
+            padding: 12px;
+            border-radius: 10px;
+            overflow: auto;
+            white-space: pre-wrap
+        }
+
+        .card {
+            border: 1px solid #eee;
+            border-radius: 14px;
+            padding: 16px;
+            margin-top: 18px
+        }
+
+        .grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 12px
+        }
+
+        @media (max-width:800px) {
+            .grid {
+                grid-template-columns: 1fr
+            }
+        }
+
+        .muted {
+            color: #666;
+            font-size: 12px
+        }
+
+        table.tbl {
+            width: 100%;
+            border-collapse: collapse;
+            margin-top: 8px
+        }
+
+        table.tbl th,
+        table.tbl td {
+            border: 1px solid #eee;
+            padding: 6px 8px;
+            text-align: center;
+            font-size: 14px
+        }
+
+        .cell {
+            width: 80px
+        }
+
+        .step {
+            border: 1px dashed #eaeaea;
+            border-radius: 12px;
+            padding: 10px;
+            margin: 10px 0;
+            background: #fff
+        }
+
+        .warn {
+            background: #fff7e6;
+            border-color: #ffd699
+        }
+
+        .err {
+            background: #fff2f2;
+            border-color: #ffd9d9
+        }
+    </style>
+</head>
+
+<body>
+    <h1>Sistemas Lineares - Gauss</h1>
+
+    <form id="form">
+        <label style="grid-column:span 2">n
+            <input id="n" type="number" min="1" max="12" value="3" required>
+        </label>
+        <button type="button" id="make" class="ghost" style="grid-column:1/-1">Gerar grade</button>
+        <button type="submit">Calcular</button>
+    </form>
+
+      <div id="grid" class="card"></div>
+
+
+
+    <div class="grid">
+        <div class="card">
+            <h3>Etapas</h3>
+
+            <div id="steps">—</div>
+        </div>
+        <div class="card">
+            <h3>Resultados</h3>
+            <pre id="results">—</pre>
+        </div>
+    </div>
+
+
+</body>
+
+</html>
