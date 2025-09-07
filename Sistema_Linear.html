@@ -163,7 +163,145 @@
                 return s;
             }
 
-            
+            var grid = document.getElementById('grid');
+            var stepsEl = document.getElementById('steps');
+            var resEl = document.getElementById('results');
+
+            function makeGrid(n) {
+                var h = '<table class="tbl"><thead><tr>';
+                for (var j = 0; j < n; j++) h += '<th>a' + (j + 1) + '</th>';
+                h += '<th>b</th></tr></thead><tbody>';
+                for (var i = 0; i < n; i++) {
+                    h += '<tr>';
+                    for (var j = 0; j < n; j++) h += '<td><input class="cell" inputmode="decimal" placeholder="a' + (i + 1) + (j + 1) + '"></td>';
+                    h += '<td><input class="cell" inputmode="decimal" placeholder="b' + (i + 1) + '"></td></tr>';
+                }
+                h += '</tbody></table>';
+                grid.innerHTML = h;
+                stepsEl.textContent = '—';
+                resEl.textContent = '—';
+            }
+
+            function readSystem() {
+                var rows = grid.querySelectorAll('tbody tr');
+                var n = rows.length; if (!n) throw 'Gere a grade primeiro.';
+                var A = Array(n), b = Array(n);
+                for (var i = 0; i < n; i++) {
+                    A[i] = Array(n);
+                    var inps = rows[i].querySelectorAll('input');
+                    for (var j = 0; j < n; j++) {
+                        var v = parseFloat((inps[j].value || "").replace(',', '.'));
+                        if (!isNum(v)) throw 'Valor inválido em a' + (i + 1) + (j + 1) + '.';
+                        A[i][j] = v;
+                    }
+                    var vb = parseFloat((inps[n].value || "").replace(',', '.'));
+                    if (!isNum(vb)) throw 'Valor inválido em b' + (i + 1) + '.';
+                    b[i] = vb;
+                }
+                return { A: A, b: b };
+            }
+
+            function renderAug(A, b, legend) {
+                var n = A.length, html = '<div class="step"><b>' + legend + '</b>';
+                html += '<table class="tbl"><thead><tr>';
+                for (var j = 0; j < n; j++) html += '<th>a' + (j + 1) + '</th>';
+                html += '<th>b</th></tr></thead><tbody>';
+                for (var i = 0; i < n; i++) {
+                    html += '<tr>';
+                    for (var j = 0; j < n; j++) html += '<td>' + nice(A[i][j]) + '</td>';
+                    html += '<td>' + nice(b[i]) + '</td></tr>';
+                }
+                html += '</tbody></table></div>';
+                return html;
+            }
+
+            function swap(A, b, i, j) {
+                if (i === j) return;
+                var t = A[i]; A[i] = A[j]; A[j] = t;
+                var tb = b[i]; b[i] = b[j]; b[j] = tb;
+            }
+
+            function gauss(Ain, bin) {
+                var A = Ain.map(function (r) { return r.slice() }), b = bin.slice();
+                var n = A.length, EPS = 1e-12, mults = [], stepsHTML = '';
+                stepsHTML += renderAug(A, b, 'Matriz inicial');
+
+                for (var k = 0; k < n - 1; k++) {
+                    var p = k, best = abs(A[k][k]);
+                    for (var i = k + 1; i < n; i++) { var v = abs(A[i][k]); if (v > best) { best = v; p = i; } }
+                    if (p !== k) {
+                        swap(A, b, k, p);
+                        stepsHTML += '<div class="step">Troca L' + (k + 1) + ' ↔ L' + (p + 1) + '</div>';
+                        stepsHTML += renderAug(A, b, 'Depois da troca');
+                    }
+                    var piv = A[k][k];
+
+                    for (var i2 = k + 1; i2 < n; i2++) {
+                        var m = (abs(piv) < EPS) ? 0 : (A[i2][k] / piv);
+                        mults.push({ k: k + 1, i: i2 + 1, m: m });
+                        for (var j = k; j < n; j++) A[i2][j] = A[i2][j] - m * A[k][j];
+                        b[i2] = b[i2] - m * b[k];
+                        stepsHTML += '<div class="step">L' + (i2 + 1) + ' ← L' + (i2 + 1) + ' − (' + nice(m) + ')·L' + (k + 1) + '</div>';
+                        stepsHTML += renderAug(A, b, 'Após eliminação (linha ' + (i2 + 1) + ')');
+                    }
+                }
+
+                for (var r = 0; r < n; r++) {
+                    var all0 = true; for (var c = 0; c < n; c++) { if (abs(A[r][c]) > 1e-12) { all0 = false; break; } }
+                    if (all0 && abs(b[r]) > 1e-12) {
+                        stepsHTML += '<div class="step err">0…0 | ≠0 → sistema inconsistente.</div>';
+                        return { U: A, y: b, mults: mults, stepsHTML: stepsHTML, inconsistent: true, singular: false };
+                    }
+                }
+
+                var singular = false; for (var d = 0; d < n; d++) { if (abs(A[d][d]) < 1e-12) { singular = true; break; } }
+                return { U: A, y: b, mults: mults, stepsHTML: stepsHTML, inconsistent: false, singular: singular };
+            }
+
+            function backSub(U, y) {
+                var n = U.length, x = Array(n), html = '<div class="step"><b>Retro-substituição</b></div>';
+                for (var i = n - 1; i >= 0; i--) {
+                    var s = 0; for (var j = i + 1; j < n; j++) s += U[i][j] * x[j];
+                    var piv = U[i][i];
+                    x[i] = (abs(piv) < 1e-12) ? (0 / 0) : ((y[i] - s) / piv);
+                    html += '<div class="step">x' + (i + 1) + ' = (' + nice(y[i]) + ' − ' + nice(s) + ') / ' + nice(piv) + ' = <b>' + nice(x[i]) + '</b></div>';
+                }
+                return { x: x, html: html };
+            }
+
+            document.getElementById('make').addEventListener('click', function () {
+                var n = parseInt(document.getElementById('n').value, 10) || 3;
+                if (n < 1) n = 1; if (n > 12) n = 12; document.getElementById('n').value = n;
+                makeGrid(n);
+            });
+
+            document.getElementById('form').addEventListener('submit', function (e) {
+                e.preventDefault();
+                try {
+                    var sys = readSystem();
+                    var G = gauss(sys.A, sys.b);
+                    stepsEl.innerHTML = G.stepsHTML || '—';
+
+                    var out = '';
+                    if (G.inconsistent) {
+                        out = 'Sem solução (sistema inconsistente).\n';
+                    } else {
+                        var bk = backSub(G.U, G.y);
+                        stepsEl.innerHTML += bk.html;
+                        for (var i = 0; i < bk.x.length; i++) out += 'x' + (i + 1) + ' = ' + nice(bk.x[i]) + '\n';
+                        if (G.singular) out += '\nAtenção: pivô ~0; pode haver infinitas soluções (NaN = indeterminado).';
+                    }
+                    out += '\nMultiplicadores (' + G.mults.length + '):\n';
+                    for (var m = 0; m < G.mults.length; m++) {
+                        var mm = G.mults[m];
+                        out += 'k=' + mm.k + ', i=' + mm.i + ', m=' + nice(mm.m) + '\n';
+                    }
+                    resEl.textContent = out.trim();
+                } catch (err) {
+                    stepsEl.innerHTML = '<div class="step err"><b>Erro:</b> ' + err + '</div>';
+                    resEl.textContent = '—';
+                }
+            });
 
             makeGrid(3);
         })();

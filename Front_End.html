@@ -1,11 +1,63 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Início</title>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>Métodos Numéricos</title>
+  <style>
+    body {
+      font-family: system-ui, Segoe UI, Roboto, Arial, sans-serif;
+      max-width: 920px;
+      margin: 32px auto;
+      padding: 0 16px;
+      color: #111
+    }
+
+    h1 {
+      margin: 0 0 12px
+    }
+
+    form {
+      display: grid;
+      grid-template-columns: 1fr;
+      gap: 12px;
+      align-items: end;
+      margin-bottom: 20px
+    }
+
+    button {
+      padding: 12px;
+      border: 1px solid #ddd;
+      border-radius: 10px;
+      font-size: 15px;
+      cursor: pointer;
+      background: #eee;
+      border-color: #eee;
+    }
+
+    .card {
+      border: 1px solid #eee;
+      border-radius: 14px;
+      padding: 16px;
+      margin-top: 18px;
+      text-align: center;
+    }
+  </style>
 </head>
+
 <body>
-    
+  <h1>Métodos Numéricos</h1>
+
+  <div class="card">
+    <form>
+      <button type="button" onclick="window.location.href='Sistema_Linear.html'">
+        Método de Gauss
+      </button>
+      <button type="button" onclick="window.location.href='Bissecção.html'">
+        Método da Bisseção
+      </button>
+    </form>
+  </div>
 </body>
+
 </html>
